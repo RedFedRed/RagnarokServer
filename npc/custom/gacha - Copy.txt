@@ -1,0 +1,112 @@
+prontera,143,174,5	script	Gachapon Machine	562,{
+    mes "[ " + .npc_name$ + " ]";
+    mes "I'm " + .npc_name$ + "! I'll exchange";
+    mes "Random Prizes for every";
+    mes "^ff0000" + F_InsertComma(.pull_price) + " zeny^000000.";
+    next;
+    mes "[ " + .npc_name$ + " ]";
+    mes "Our Grand prize is:";
+    mes "^ff0000 x1 TCG Card^000000";
+    mes "^ff0000 x1 Costume set^000000";
+    mes "Consolations are:";
+    mes "^ff0000 x?? Gold Coin^000000";
+    mes "^ff0000 x?? Gold^000000";
+    mes "^ff0000 x?? Treasure Box^000000";
+    mes "^ff0000 x?? Oridecon^000000";
+    mes "^ff0000 x?? Elunium^000000";
+    mes "And many more!!";
+    next;
+    mes "[ " + .npc_name$ + " ]";
+    mes "Do you want to pull?";
+    next;
+    if(select("Sure!:No.") == 2) {
+        mes "[ " + .npc_name$ + " ]";
+        mes "Come back if you change";
+        mes "your mind.";
+        close;
+    }
+
+    mes "[ " + .npc_name$ + " ]";
+    mes "How many pulls do you want?";
+    next;
+    .@range = input(.@pullAmt, .min_pulls, .max_pulls);
+
+    if(.@range != 0) {
+        mes "[ " + .npc_name$ + " ]";
+        mes "The " + ((.@range > -1) ? "maximum" : "minimum") + " number of pulls is " + ((.@range > -1) ? .max_pulls : .min_pulls)  + ".";
+        close;
+    }
+
+    if (Zeny < .pull_price * .@pullAmt) {
+        mes "[ " + .npc_name$ + " ]";
+        mes "You don't have enough zeny.";
+        close;
+    }     
+
+    freeloop(1);
+    for(.@i = 0; .@i < .@pullAmt; .@i++) {
+        if (Weight * 100 / MaxWeight >= .weight_cap) {
+            mes "[ " + .npc_name$ + " ]";
+            mes "You can't do anymore";
+            mes "pulls because you are";
+            mes "nearing your weight limit";
+            close;
+        }
+
+        Zeny -= .pull_price;
+        .@priceNo = rand(0, getarraysize(.prices) - 1);
+        .@priceIdx = .@priceNo * 4;
+
+        if (rand(1, 100) <= .prices[.@priceIdx]) {
+            .@itemId = .prices[.@priceIdx + 1];
+            .@itemAmt = rand(.prices[.@priceIdx + 2], .prices[.@priceIdx + 3]);
+
+            if(.prices[.@priceIdx] <= .announce_limit) {
+                announce("Hey! " + strcharinfo(0) + " just received " + getitemname(.@itemId) + " x " + .@itemAmt + " from " + .npc_name$ + "!", bc_all);
+                specialeffect2(248);
+            }
+        } else {
+            .@itemId = rand(.default[0], .default[1]);
+            .@itemAmt = rand(.default[2], .default[3]);
+        }
+
+        getitem(.@itemId, .@itemAmt);
+    }
+    freeloop(0);
+
+    mes "[ " + .npc_name$ + " ]";
+    mes "Here you go!";
+    close;
+    
+    OnInit:
+        .npc_name$ = strnpcinfo(1);
+        .pull_price = 50000;
+        .announce_limit = 5;
+        .weight_cap = 90;
+        .min_pulls = 1;
+        .max_pulls = 500;
+
+        //<Chance in %>, <ItemID>, <MinAmount>, <MaxAmount>
+        setarray(.prices[0], 
+            1, 35031, 1, 1, // demoniac mid
+            1, 35081, 1, 1, // demoniac upper
+            1, 35099, 1, 1, // demoniac low
+            2, 7227, 1, 1, // tcg
+            5, 7539, 1, 2, // diablo coin
+            8, 969, 1, 3, // gold
+            10, 604, 1, 3, // deadbranch
+            8, 7444, 1, 3, // treasurebox
+            8, 12208, 1, 2, // battle manual
+            20, 985, 3, 8, // elu
+            25, 7063, 2, 5, // alice apron
+            25, 7047, 2, 5, // soft feather
+            20, 984, 3, 8, // ori
+            15, 748, 1, 3 // witherless
+        );
+
+        //<MinItemID>, <MaxItemID>, <MinAmount>, <MaxAmount>
+        setarray(.default[0], 901, 926, 5, 15);
+
+        delwaitingroom;
+        waitingroom("Try your Luck?", 0);
+}
